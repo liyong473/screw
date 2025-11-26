@@ -27,10 +27,7 @@ import cn.smallbun.screw.core.query.oracle.model.OracleColumnModel;
 import cn.smallbun.screw.core.query.oracle.model.OracleDatabaseModel;
 import cn.smallbun.screw.core.query.oracle.model.OraclePrimaryKeyModel;
 import cn.smallbun.screw.core.query.oracle.model.OracleTableModel;
-import cn.smallbun.screw.core.util.Assert;
-import cn.smallbun.screw.core.util.CollectionUtils;
-import cn.smallbun.screw.core.util.ExceptionUtils;
-import cn.smallbun.screw.core.util.JdbcUtils;
+import cn.smallbun.screw.core.util.*;
 
 import javax.sql.DataSource;
 import java.sql.PreparedStatement;
@@ -96,7 +93,9 @@ public class OracleDataBaseQuery extends AbstractDatabaseQuery {
             //https://docs.oracle.com/en/database/oracle/oracle-database/20/jjdbc/performance-extensions.html#GUID-15865071-39F2-430F-9EDA-EB34D0B2D560
             //获取所有表 查询表名、说明
             String sql = "SELECT TABLE_NAME,COMMENTS AS REMARKS FROM USER_TAB_COMMENTS WHERE TABLE_TYPE = 'TABLE'";
-            if (isDda()) {
+            // 非dba用户指定了schema不生效，此处由判断dba改为判断schema不为空
+            // if (isDda()) {
+            if (StringUtils.isNotBlank(getSchema())) {
                 //DBA 使用 DBA_TAB_COMMENTS 进行查询 Oracle连接用户和schema不同问题。dba连接用户可以生成不同schema下的表结构
                 sql = "SELECT TABLE_NAME,COMMENTS AS REMARKS FROM DBA_TAB_COMMENTS WHERE TABLE_TYPE = 'TABLE' AND OWNER = '"
                       + getSchema() + "'";
@@ -142,7 +141,9 @@ public class OracleDataBaseQuery extends AbstractDatabaseQuery {
                 //查询全部
                 if (table.equals(PERCENT_SIGN)) {
                     String sql = "SELECT ut.TABLE_NAME,  ut.COLUMN_NAME, uc.comments as REMARKS, concat(concat(concat(ut.DATA_TYPE, '('), ut.DATA_LENGTH), ')') AS COLUMN_TYPE, ut.DATA_LENGTH as COLUMN_LENGTH FROM user_tab_columns ut INNER JOIN user_col_comments uc ON ut.TABLE_NAME = uc.table_name AND ut.COLUMN_NAME = uc.column_name";
-                    if (isDda()) {
+                    // 非dba用户指定了schema不生效，此处由判断dba改为判断schema不为空
+                    // if (isDda()) {
+                    if (StringUtils.isNotBlank(getSchema())) {
                         sql = "SELECT ut.TABLE_NAME,  ut.COLUMN_NAME, uc.comments as REMARKS, concat(concat(concat(ut.DATA_TYPE, '('), ut.DATA_LENGTH), ')') AS COLUMN_TYPE, ut.DATA_LENGTH as COLUMN_LENGTH FROM dba_tab_columns ut INNER JOIN dba_col_comments uc ON ut.TABLE_NAME = uc.table_name AND ut.COLUMN_NAME = uc.column_name and ut.OWNER = uc.OWNER WHERE ut.OWNER = '"
                               + getDataBase() + "'";
                     }
@@ -156,7 +157,9 @@ public class OracleDataBaseQuery extends AbstractDatabaseQuery {
                 //单表查询
                 else {
                     String sql = "SELECT ut.TABLE_NAME,  ut.COLUMN_NAME, uc.comments as REMARKS, concat(concat(concat(ut.DATA_TYPE, '('), ut.DATA_LENGTH), ')') AS COLUMN_TYPE, ut.DATA_LENGTH as COLUMN_LENGTH FROM user_tab_columns ut INNER JOIN user_col_comments uc ON ut.TABLE_NAME = uc.table_name AND ut.COLUMN_NAME = uc.column_name WHERE ut.Table_Name = '%s'";
-                    if (isDda()) {
+                    // 非dba用户指定了schema不生效，此处由判断dba改为判断schema不为空
+                    // if (isDda()) {
+                    if (StringUtils.isNotBlank(getSchema())) {
                         sql = "SELECT ut.TABLE_NAME,  ut.COLUMN_NAME, uc.comments as REMARKS, concat(concat(concat(ut.DATA_TYPE, '('), ut.DATA_LENGTH), ')') AS COLUMN_TYPE, ut.DATA_LENGTH as COLUMN_LENGTH FROM dba_tab_columns ut INNER JOIN dba_col_comments uc ON ut.TABLE_NAME = uc.table_name AND ut.COLUMN_NAME = uc.column_name and ut.OWNER = uc.OWNER WHERE ut.Table_Name = '%s' ut.OWNER = '"
                               + getDataBase() + "'";
                     }
